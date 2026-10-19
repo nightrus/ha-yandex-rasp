@@ -3,7 +3,7 @@
 from typing import Final
 
 DOMAIN: Final = "yandex_rasp"
-VERSION: Final = "0.2.0"
+VERSION: Final = "0.3.0"
 
 API_URL: Final = "https://api.rasp.yandex.net/v3.0/schedule/"
 API_PAGE_LIMIT: Final = 100
@@ -11,7 +11,6 @@ API_PAGE_LIMIT: Final = 100
 CONF_STATION: Final = "station"
 CONF_UPDATE_INTERVAL: Final = "update_interval"
 
-DEFAULT_STATION: Final = "s9601805"  # Бескудниково
 DEFAULT_UPDATE_INTERVAL: Final = 30  # minutes
 MIN_UPDATE_INTERVAL: Final = 15  # 500 requests/day free quota
 MAX_UPDATE_INTERVAL: Final = 1440
