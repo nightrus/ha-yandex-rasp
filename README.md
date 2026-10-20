@@ -4,10 +4,19 @@
 [API Яндекс.Расписаний](https://yandex.ru/dev/rasp/doc/ru/) и включает
 карточку-табло для дашборда.
 
+![Табло электричек: тёмная тема](https://raw.githubusercontent.com/nightrus/ha-yandex-rasp/main/docs/card-dark.png)
+
+<img src="https://raw.githubusercontent.com/nightrus/ha-yandex-rasp/main/docs/card-compact-light.png" width="380" alt="Узкая колонка, светлая тема">
+
+Слева рейсы на Москву, справа в обратную сторону: время, маршрут, тип поезда,
+пропускаемые остановки и сколько минут осталось. Фон берётся из темы
+дашборда, в узкой колонке строки становятся компактнее.
+
 ## Установка
 
-**HACS:** HACS → ⋮ → «Пользовательские репозитории» → URL этого репозитория,
-категория «Интеграция» → установить → перезапустить HA.
+**HACS:** HACS → ⋮ → «Пользовательские репозитории» →
+`https://github.com/nightrus/ha-yandex-rasp`, категория «Интеграция» →
+установить → перезапустить HA.
 
 **Вручную:** скопировать `custom_components/yandex_rasp` в
 `/config/custom_components/` и перезапустить HA.
