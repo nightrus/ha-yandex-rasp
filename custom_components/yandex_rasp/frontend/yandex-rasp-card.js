@@ -1,7 +1,7 @@
 /* Yandex Rasp departure board card — bundled with the yandex_rasp integration. */
 
-const CARD_VERSION = "0.3.2";
-const DEFAULTS = { hours: 1, rows: 6 };
+const CARD_VERSION = "0.4.0";
+const DEFAULTS = { hours: 1, rows: 6, layout: "columns" };
 
 const STYLE = `
   :host { display: block; }
@@ -41,8 +41,9 @@ const STYLE = `
   .cols { display: grid; grid-template-columns: 1fr 1fr; }
   .col { min-width: 0; }
   .col + .col { border-left: 1px solid var(--divider-color, rgba(127,127,127,.2)); }
-  :host([size="stack"]) .cols { grid-template-columns: 1fr; }
-  :host([size="stack"]) .col + .col {
+  /* layout: stacked, or a card too narrow for two columns */
+  .cols.stacked, :host([size="stack"]) .cols { grid-template-columns: 1fr; }
+  .cols.stacked .col + .col, :host([size="stack"]) .col + .col {
     border-left: 0; border-top: 1px solid var(--divider-color, rgba(127,127,127,.2));
   }
 
@@ -144,7 +145,23 @@ const createCardClass = (Base) => class YandexRaspCard extends Base {
   setConfig(config) {
     this._config = { ...DEFAULTS, ...config };
     if (!this.shadowRoot) this.attachShadow({ mode: "open" });
+    this._applySize();
     this._render();
+  }
+
+  get _stacked() {
+    return this._config?.layout === "stacked";
+  }
+
+  // Row density follows the width a direction actually gets: half the card
+  // in two columns, the whole card when stacked.
+  _applySize() {
+    const w = this._width;
+    if (!w) return;
+    const size = this._stacked
+      ? (w < 340 ? "compact" : "wide")
+      : (w < 300 ? "stack" : w < 560 ? "compact" : "wide");
+    if (this.getAttribute("size") !== size) this.setAttribute("size", size);
   }
 
   set hass(hass) {
@@ -162,9 +179,8 @@ const createCardClass = (Base) => class YandexRaspCard extends Base {
     // Countdown and clock tick without waiting for a state change.
     this._timer = setInterval(() => this._render(), 15000);
     this._resize = new ResizeObserver(([e]) => {
-      const w = e.contentRect.width;
-      const size = w < 300 ? "stack" : w < 560 ? "compact" : "wide";
-      if (this.getAttribute("size") !== size) this.setAttribute("size", size);
+      this._width = e.contentRect.width;
+      this._applySize();
     });
     this._resize.observe(this);
   }
@@ -175,7 +191,8 @@ const createCardClass = (Base) => class YandexRaspCard extends Base {
   }
 
   getCardSize() {
-    return 2 + Number(this._config?.rows || DEFAULTS.rows);
+    const rows = Number(this._config?.rows || DEFAULTS.rows);
+    return 2 + (this._stacked ? 2 * rows : rows);
   }
 
   getGridOptions() {
@@ -263,7 +280,7 @@ const createCardClass = (Base) => class YandexRaspCard extends Base {
       return t >= now - 30000 && t <= until;
     });
 
-    // Left column: towards Moscow; right: every other direction.
+    // Towards Moscow first (left column, or on top when stacked), then the rest.
     const dirs = [...(a.directions || [])];
     for (const d of deps) if (!dirs.includes(d.direction)) dirs.push(d.direction);
     const toMoscow = dirs.filter(isMoscow);
@@ -297,7 +314,7 @@ const createCardClass = (Base) => class YandexRaspCard extends Base {
           </div>
           <div class="clock">${this._clock()}</div>
         </div>
-        <div class="cols">${columns}</div>
+        <div class="cols${this._stacked ? " stacked" : ""}">${columns}</div>
         <div class="foot"><span>Яндекс.Расписания</span><span>обновлено ${upd}</span></div>
       </ha-card>`;
   }
@@ -306,6 +323,18 @@ const createCardClass = (Base) => class YandexRaspCard extends Base {
 const EDITOR_SCHEMA = [
   { name: "entity", selector: { entity: { domain: "sensor", integration: "yandex_rasp" } } },
   { name: "title", selector: { text: {} } },
+  {
+    name: "layout",
+    selector: {
+      select: {
+        mode: "dropdown",
+        options: [
+          { value: "columns", label: "Два столбца (направления рядом)" },
+          { value: "stacked", label: "Один столбец (направления друг под другом)" },
+        ],
+      },
+    },
+  },
   {
     type: "grid", name: "", schema: [
       { name: "rows", selector: { number: { min: 1, max: 30, mode: "box" } } },
@@ -317,7 +346,8 @@ const EDITOR_SCHEMA = [
 const EDITOR_LABELS = {
   entity: "Сенсор станции",
   title: "Заголовок (по умолчанию — название станции)",
-  rows: "Строк в каждом столбце",
+  layout: "Раскладка",
+  rows: "Строк в каждом направлении",
   hours: "Окно, часов",
 };
 
