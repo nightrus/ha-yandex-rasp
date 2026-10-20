@@ -1,6 +1,6 @@
 /* Yandex Rasp departure board card — bundled with the yandex_rasp integration. */
 
-const CARD_VERSION = "0.3.1";
+const CARD_VERSION = "0.3.2";
 const DEFAULTS = { hours: 1, rows: 6 };
 
 const STYLE = `

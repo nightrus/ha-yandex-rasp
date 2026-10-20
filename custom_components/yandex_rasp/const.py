@@ -3,7 +3,7 @@
 from typing import Final
 
 DOMAIN: Final = "yandex_rasp"
-VERSION: Final = "0.3.1"
+VERSION: Final = "0.3.2"
 
 API_URL: Final = "https://api.rasp.yandex.net/v3.0/schedule/"
 API_PAGE_LIMIT: Final = 100

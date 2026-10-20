@@ -55,6 +55,12 @@ rows: 6         # строк в каждом столбце
 title: Бескудниково  # необязательно
 ```
 
+## Иконка
+
+`custom_components/yandex_rasp/brand/`: логотип Яндекс.Расписаний (две стрелки),
+отрисован из векторного `mask-icon.svg` сайта rasp.yandex.ru в 256 и 512 px.
+HA 2026.x показывает её в списке интеграций без PR в home-assistant/brands.
+
 ## Справочник станций
 
 `custom_components/yandex_rasp/stations.json.gz` — ж/д станции России из
