@@ -1,6 +1,6 @@
 /* Yandex Rasp departure board card — bundled with the yandex_rasp integration. */
 
-const CARD_VERSION = "0.2.0";
+const CARD_VERSION = "0.3.1";
 const DEFAULTS = { hours: 1, rows: 6 };
 
 const STYLE = `
@@ -140,7 +140,7 @@ const findEntity = (hass) =>
     (id) => id.startsWith("sensor.") && hass.states[id].attributes.station_code &&
       Array.isArray(hass.states[id].attributes.departures));
 
-class YandexRaspCard extends HTMLElement {
+const createCardClass = (Base) => class YandexRaspCard extends Base {
   setConfig(config) {
     this._config = { ...DEFAULTS, ...config };
     if (!this.shadowRoot) this.attachShadow({ mode: "open" });
@@ -301,7 +301,7 @@ class YandexRaspCard extends HTMLElement {
         <div class="foot"><span>Яндекс.Расписания</span><span>обновлено ${upd}</span></div>
       </ha-card>`;
   }
-}
+};
 
 const EDITOR_SCHEMA = [
   { name: "entity", selector: { entity: { domain: "sensor", integration: "yandex_rasp" } } },
@@ -321,7 +321,7 @@ const EDITOR_LABELS = {
   hours: "Окно, часов",
 };
 
-class YandexRaspCardEditor extends HTMLElement {
+const createEditorClass = (Base) => class YandexRaspCardEditor extends Base {
   setConfig(config) {
     this._config = { ...DEFAULTS, ...config };
     this._update();
@@ -350,13 +350,41 @@ class YandexRaspCardEditor extends HTMLElement {
     this._form.schema = EDITOR_SCHEMA;
     this._form.data = this._config;
   }
+};
+
+/*
+ * browser_mod and hui-element load the @webcomponents/scoped-custom-element-registry
+ * polyfill, which replaces window.customElements and window.HTMLElement. An element
+ * registered before the swap is invisible to the new registry ("Custom element doesn't
+ * exist"), and one extending the native HTMLElement is refused by the polyfilled
+ * define. So build the classes from the live globals and retry after the polyfill
+ * had a chance to load; get() guards make repeat passes no-ops.
+ */
+function defineYandexRaspCards() {
+  const reg = window.customElements;
+  if (!reg) return;
+  const Base = window.HTMLElement;
+  if (!reg.get("yandex-rasp-card")) reg.define("yandex-rasp-card", createCardClass(Base));
+  if (!reg.get("yandex-rasp-card-editor")) {
+    reg.define("yandex-rasp-card-editor", createEditorClass(Base));
+  }
 }
 
-if (!customElements.get("yandex-rasp-card")) {
-  customElements.define("yandex-rasp-card", YandexRaspCard);
-}
-if (!customElements.get("yandex-rasp-card-editor")) {
-  customElements.define("yandex-rasp-card-editor", YandexRaspCardEditor);
+defineYandexRaspCards();
+if (!window.__yandexRaspCardScheduled) {
+  window.__yandexRaspCardScheduled = true;
+  const retry = () => {
+    try {
+      defineYandexRaspCards();
+    } catch (_) {
+      /* a concurrent registry swap is harmless; the next pass settles it */
+    }
+  };
+  Promise.resolve().then(retry);
+  requestAnimationFrame(retry);
+  setTimeout(retry, 0);
+  setTimeout(retry, 1000);
+  setTimeout(retry, 5000);
 }
 
 window.customCards = window.customCards || [];
